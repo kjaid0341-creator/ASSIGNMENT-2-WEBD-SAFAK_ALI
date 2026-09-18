@@ -1,0 +1,185 @@
+<%- include('partials/header') %>
+
+<div class="landing">
+
+  <!-- Navigation -->
+  <div class="landing-nav">
+    <div class="container">
+      <div class="landing-nav-inner">
+        <a href="/" class="landing-logo">
+          <i data-lucide="landmark"></i>
+          SHG Tracker
+        </a>
+        <div class="nav-links">
+          <a href="/auth/login" class="btn btn-outline btn-sm">Sign in</a>
+          <a href="/auth/register" class="btn btn-primary btn-sm">Register group</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="landing-hero">
+    <div class="container">
+      <div class="hero-eyebrow">Self-Help Group Management</div>
+      <h1 class="hero-title">
+        Record savings and loans<br>
+        for your <span class="hero-underline">community group.
+          <!-- Hand-drawn SVG underline — deliberate imperfection -->
+          <svg viewBox="0 0 220 9" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M2 6.5 C30 3, 70 8.5, 110 5.5 C150 2.5, 185 7.5, 218 4.5" stroke="#1E4A35" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+          </svg>
+        </span>
+      </h1>
+      <p class="hero-sub">
+        SHG Tracker gives group leaders a digital ledger to record monthly savings contributions, review loan applications, and maintain repayment accounts — for groups of any size across rural India.
+      </p>
+      <div class="hero-cta">
+        <a href="/auth/register" class="btn btn-primary btn-lg">Get started</a>
+        <a href="/auth/login" class="btn btn-secondary btn-lg">Sign in</a>
+        <span class="hero-cta-note">No setup fee. Works on any device.</span>
+      </div>
+
+      <!-- Rotated seal — deliberate imperfection -->
+      <div class="hero-seal" aria-hidden="true">
+        <div class="seal-year">2024</div>
+        <div class="seal-text">Community Finance Ledger</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 01 — What it does -->
+  <div class="landing-section">
+    <div class="container">
+      <div class="section-num">01 — Features</div>
+      <div class="features-layout">
+        <div class="features-aside">
+          <h2 class="section-heading">A complete record for every transaction your group makes.</h2>
+          <p>
+            Designed for group leaders who currently maintain paper ledgers. SHG Tracker moves those records online without changing how the group works.
+          </p>
+        </div>
+        <ul class="feature-list">
+          <li>
+            <span class="f-num">01</span>
+            <div class="f-content">
+              <strong>Monthly savings entries, one per member per cycle.</strong>
+              <span>The group leader logs ₹200–₹500 contributions each month. Duplicate entries for the same member and month are blocked automatically.</span>
+            </div>
+          </li>
+          <li>
+            <span class="f-num">02</span>
+            <div class="f-content">
+              <strong>Loan requests submitted by members online.</strong>
+              <span>Members apply with the loan amount, purpose (e.g., purchase of seeds, medical expense), and preferred repayment period. No paperwork.</span>
+            </div>
+          </li>
+          <li>
+            <span class="f-num">03</span>
+            <div class="f-content">
+              <strong>Group leader approves or rejects with a reason.</strong>
+              <span>On approval, a full instalment schedule is generated automatically using simple interest at the group's annual rate.</span>
+            </div>
+          </li>
+          <li>
+            <span class="f-num">04</span>
+            <div class="f-content">
+              <strong>Each repayment logged against the correct instalment.</strong>
+              <span>Outstanding balance updates immediately. Overdue instalments are flagged. Loans close automatically when all EMIs are cleared.</span>
+            </div>
+          </li>
+          <li>
+            <span class="f-num">05</span>
+            <div class="f-content">
+              <strong>Every member has a personal passbook view.</strong>
+              <span>Savings history with running totals, active loan status, and repayment schedule — visible to the member from any device.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 02 — How it works -->
+  <div class="landing-section">
+    <div class="container">
+      <div class="section-num">02 — How it works</div>
+      <div class="howit-layout">
+        <div>
+          <h2 class="section-heading">Three roles, one shared record book.</h2>
+          <ul class="step-list">
+            <li>
+              <span class="step-n">1</span>
+              <div class="step-content">
+                <h4>Admin registers the group and adds members</h4>
+                <p>Set the group name, annual interest rate, and enrol members. Each member gets their own login.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-n">2</span>
+              <div class="step-content">
+                <h4>Savings are recorded each collection cycle</h4>
+                <p>Admin enters the month, member name, and amount. ₹300 from Anita Devi, ₹250 from Priya Kumari — it takes under a minute per entry.</p>
+              </div>
+            </li>
+            <li>
+              <span class="step-n">3</span>
+              <div class="step-content">
+                <h4>Loans are applied for and repaid through the platform</h4>
+                <p>Rajkumar M. applies for ₹12,000 for 12 months. Admin approves, the schedule is generated. Each monthly payment of ₹1,120 is logged as it arrives.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sample passbook panel -->
+        <div>
+          <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:10px">Sample — savings record</div>
+          <div class="sample-panel">
+            <div class="sample-panel-header">Mahila Udyog SHG — September 2024</div>
+            <div class="sample-row">
+              <div><div class="s-name">Anita Devi</div><div class="s-date">03 Sep 2024</div></div>
+              <div class="s-amt">+ ₹300</div>
+            </div>
+            <div class="sample-row">
+              <div><div class="s-name">Priya Kumari</div><div class="s-date">03 Sep 2024</div></div>
+              <div class="s-amt">+ ₹250</div>
+            </div>
+            <div class="sample-row">
+              <div><div class="s-name">Sunita Bai</div><div class="s-date">05 Sep 2024</div></div>
+              <div class="s-amt">+ ₹400</div>
+            </div>
+            <div class="sample-row">
+              <div><div class="s-name">Rajkumar M.</div><div class="s-date">05 Sep 2024</div></div>
+              <div class="s-amt">+ ₹300</div>
+            </div>
+            <div class="sample-row">
+              <div><div class="s-name">Meena Devi</div><div class="s-date">07 Sep 2024</div></div>
+              <div class="s-amt">+ ₹500</div>
+            </div>
+            <div style="padding:10px 16px;background:var(--bg-2);display:flex;justify-content:space-between;font-size:0.78rem;border-top:1px solid var(--border)">
+              <span style="color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;font-size:0.68rem">Month total</span>
+              <span style="color:var(--ink);font-weight:600;font-family:var(--font-serif)">₹1,750</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="container">
+    <div class="landing-footer">
+      <div class="footer-copy">
+        SHG Tracker &nbsp;·&nbsp; Community Finance Software &nbsp;·&nbsp; &copy; 2024. All records are stored securely.
+      </div>
+      <div class="footer-links">
+        <a href="/auth/login">Sign in</a>
+        <a href="/auth/register">Register</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<%- include('partials/footer') %>

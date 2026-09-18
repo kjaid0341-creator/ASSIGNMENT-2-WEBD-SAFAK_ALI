@@ -1,0 +1,128 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Groups</div>
+        <div class="breadcrumb">Manage your self-help groups</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('createGroupModal')">
+        <i data-lucide="plus"></i> Create group
+      </button>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <% if (groups.length === 0) { %>
+        <div class="card">
+          <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="users"></i></div>
+            <h3>No groups yet</h3>
+            <p>Create your first self-help group to start managing savings and loans.</p>
+            <button class="btn btn-primary" onclick="openModal('createGroupModal')">Create group</button>
+          </div>
+        </div>
+      <% } else { %>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+          <% groups.forEach(group => { %>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title"><%= group.name %></div>
+                <div class="text-xs text-muted" style="margin-top:2px"><%= group.description || 'No description' %></div>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div style="text-align:center;padding:10px;background:var(--bg-2);border-radius:var(--r-sm)">
+                <div style="font-size:1.4rem;font-weight:700;font-family:var(--font-serif);color:var(--ink)"><%= group.members.length %></div>
+                <div class="text-xs text-muted">Members</div>
+              </div>
+              <div style="text-align:center;padding:10px;background:var(--bg-2);border-radius:var(--r-sm)">
+                <div style="font-size:1.4rem;font-weight:700;font-family:var(--font-serif);color:var(--ink)"><%= group.interestRate %>%</div>
+                <div class="text-xs text-muted">Interest p.a.</div>
+              </div>
+            </div>
+            <% if (group.members.length > 0) { %>
+            <div style="margin-bottom:14px">
+              <div class="text-xs text-muted mb-2">Members</div>
+              <div class="flex gap-2" style="flex-wrap:wrap">
+                <% group.members.slice(0,7).forEach(m => { %>
+                  <div style="width:28px;height:28px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:600;color:var(--ink-2)" title="<%= m.name %>">
+                    <%= m.name.charAt(0).toUpperCase() %>
+                  </div>
+                <% }) %>
+                <% if (group.members.length > 7) { %>
+                  <div style="width:28px;height:28px;border-radius:50%;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.68rem;color:var(--ink-3)">+<%= group.members.length-7 %></div>
+                <% } %>
+              </div>
+            </div>
+            <% } %>
+            <div class="flex gap-2">
+              <a href="/admin/savings?groupId=<%= group._id %>" class="btn btn-outline btn-sm">Savings</a>
+              <a href="/admin/loans?groupId=<%= group._id %>" class="btn btn-outline btn-sm">Loans</a>
+              <form action="/admin/groups/<%= group._id %>/delete" method="POST" style="margin-left:auto">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" data-confirm="Delete group '<%= group.name %>'?">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Create Group Modal -->
+<div class="modal-overlay" id="createGroupModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create new group</h3>
+      <button class="modal-close" onclick="closeModal('createGroupModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form action="/admin/groups/create" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="groupName">Group name *</label>
+        <input id="groupName" type="text" name="name" class="form-control" placeholder="e.g. Mahila Udyog SHG" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="groupDesc">Description</label>
+        <textarea id="groupDesc" name="description" class="form-control" placeholder="Brief description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="interestRate">Annual interest rate (%)</label>
+        <input id="interestRate" type="number" name="interestRate" class="form-control" value="12" min="0" max="36" step="0.5">
+      </div>
+
+      <!-- Late Payment Penalty Settings -->
+      <div style="background:var(--bg-2);padding:14px;border-radius:var(--r-sm);margin-top:10px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;color:var(--ink)">⚖️ Late Repayment Penalty Policy</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="gracePeriodDays">Grace Period (Days)</label>
+            <input id="gracePeriodDays" type="number" name="gracePeriodDays" class="form-control" value="5" min="0" max="30">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" for="lateFeeAmount">Fixed Fine (₹)</label>
+            <input id="lateFeeAmount" type="number" name="lateFeeAmount" class="form-control" value="50" min="0" step="10">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:8px;margin-bottom:0">
+          <label class="form-label" for="penalInterestRate">Penal Interest (% per month on overdue amount)</label>
+          <input id="penalInterestRate" type="number" name="penalInterestRate" class="form-control" value="2" min="0" max="10" step="0.5">
+        </div>
+      </div>
+
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:18px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('createGroupModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create group</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

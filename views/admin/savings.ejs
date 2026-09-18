@@ -1,0 +1,142 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Savings</div>
+        <div class="breadcrumb">Monthly contribution records</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('recordSavingsModal')">
+        <i data-lucide="plus"></i> Record savings
+      </button>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <!-- Filter -->
+      <div class="card mb-5" style="padding:14px 18px;margin-bottom:16px">
+        <form method="GET" action="/admin/savings" class="flex gap-3 items-center" style="flex-wrap:wrap">
+          <select name="groupId" class="form-control" style="width:auto;min-width:170px">
+            <option value="">All groups</option>
+            <% groups.forEach(g => { %><option value="<%= g._id %>" <%= selectedGroup == g._id ? 'selected' : '' %>><%= g.name %></option><% }) %>
+          </select>
+          <select name="month" class="form-control" style="width:auto;min-width:130px">
+            <option value="">All months</option>
+            <% months.forEach((m,i) => { if(i===0) return; %><option value="<%= i %>" <%= selectedMonth == i ? 'selected' : '' %>><%= m %></option><% }) %>
+          </select>
+          <input type="number" name="year" class="form-control" placeholder="Year" value="<%= selectedYear %>" style="width:90px" min="2000" max="2100">
+          <button type="submit" class="btn btn-outline btn-sm">
+            <i data-lucide="search"></i> Filter
+          </button>
+          <a href="/admin/savings" class="btn btn-outline btn-sm">Reset</a>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Savings records (<%= savings.length %>)</span>
+        </div>
+        <% if (savings.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="piggy-bank"></i></div>
+            <h3>No savings recorded</h3>
+            <p>Record the first monthly contribution to begin.</p>
+            <button class="btn btn-primary btn-sm" onclick="openModal('recordSavingsModal')">Record savings</button>
+          </div>
+        <% } else { %>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr><th>Member</th><th>Group</th><th>Period</th><th>Amount</th><th>Notes</th><th>Recorded</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% savings.forEach(s => { %>
+                <tr>
+                  <td>
+                    <div class="fw-bold"><%= s.memberId ? s.memberId.name : 'Unknown' %></div>
+                    <div class="text-xs text-muted"><%= s.memberId ? s.memberId.email : '' %></div>
+                  </td>
+                  <td class="text-sm"><%= s.groupId ? s.groupId.name : '—' %></td>
+                  <td><span class="badge badge-info"><%= months[s.month] %> <%= s.year %></span></td>
+                  <td class="fw-bold text-success rupee">+ ₹<%= s.amount.toFixed(2) %></td>
+                  <td class="text-sm text-muted"><%= s.notes || '—' %></td>
+                  <td class="text-xs text-muted"><%= new Date(s.createdAt).toLocaleDateString('en-IN') %></td>
+                  <td>
+                    <form action="/admin/savings/<%= s._id %>/delete" method="POST">
+                      <button type="submit" class="btn btn-danger btn-sm btn-icon" data-confirm="Delete this savings entry?">
+                        <i data-lucide="trash-2"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Record Savings Modal -->
+<div class="modal-overlay" id="recordSavingsModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3>Record savings contribution</h3>
+      <button class="modal-close" onclick="closeModal('recordSavingsModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form action="/admin/savings/record" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="savGroupId">Group *</label>
+        <select id="savGroupId" name="groupId" class="form-control" required>
+          <option value="">-- Select group --</option>
+          <% groups.forEach(g => { %><option value="<%= g._id %>"><%= g.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="savMemberId">Member *</label>
+        <select id="savMemberId" name="memberId" class="form-control" required>
+          <option value="">-- Select group first --</option>
+          <% groups.forEach(g => { %>
+            <optgroup label="<%= g.name %>">
+              <% g.members.forEach(m => { %>
+                <option value="<%= m._id %>" data-group="<%= g._id %>"><%= m.name %></option>
+              <% }) %>
+            </optgroup>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="savMonth">Month *</label>
+          <select id="savMonth" name="month" class="form-control" required>
+            <% months.forEach((m,i) => { if(i===0) return; %>
+              <option value="<%= i %>" <%= i === currentMonth ? 'selected' : '' %>><%= m %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="savYear">Year *</label>
+          <input id="savYear" type="number" name="year" class="form-control" value="<%= currentYear %>" min="2000" max="2100" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="savAmount">Amount (₹) *</label>
+        <input id="savAmount" type="number" name="amount" class="form-control" placeholder="e.g. 300" min="0" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="savNotes">Notes</label>
+        <input id="savNotes" type="text" name="notes" class="form-control" placeholder="Optional remarks">
+      </div>
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:18px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('recordSavingsModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

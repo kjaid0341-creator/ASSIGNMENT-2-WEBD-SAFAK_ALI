@@ -1,0 +1,11 @@
+<%- include('partials/header') %>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;position:relative;z-index:1">
+  <div style="font-family:var(--font-serif);font-size:5rem;font-weight:700;color:var(--border-2);line-height:1;margin-bottom:16px">404</div>
+  <h2 style="margin-bottom:8px">Page not found</h2>
+  <p style="color:var(--ink-3);margin-bottom:24px;max-width:38ch">The page you are looking for does not exist or has been moved.</p>
+  <div class="flex gap-3" style="justify-content:center">
+    <a href="/" class="btn btn-primary">Go to home</a>
+    <a href="javascript:history.back()" class="btn btn-outline">Go back</a>
+  </div>
+</div>
+<%- include('partials/footer') %>

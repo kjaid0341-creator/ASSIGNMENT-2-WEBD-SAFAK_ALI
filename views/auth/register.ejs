@@ -1,0 +1,115 @@
+<%- include('../partials/header') %>
+
+<div class="auth-page">
+  <!-- Left panel -->
+  <div class="auth-left">
+    <a href="/" class="auth-brand">
+      <i data-lucide="landmark"></i>
+      SHG Tracker
+    </a>
+    <div class="auth-panel-body">
+      <h2>Start recording. No setup cost.</h2>
+      <p>
+        Register as a group admin to create your SHG, add members, and begin recording savings immediately. Members can self-register and link to your group.
+      </p>
+      <div class="sample-panel" style="margin-top:0">
+        <div class="sample-panel-header">Interest — simple calculation</div>
+        <div class="sample-row">
+          <div class="s-name">Principal</div>
+          <div style="font-size:0.82rem;font-weight:600;color:var(--ink)">₹15,000</div>
+        </div>
+        <div class="sample-row">
+          <div class="s-name">Rate · 12% p.a.</div>
+          <div style="font-size:0.82rem;font-weight:600;color:var(--ink)">12 months</div>
+        </div>
+        <div class="sample-row">
+          <div class="s-name">Total interest</div>
+          <div style="font-size:0.82rem;font-weight:600;color:var(--warning-clr)">₹1,800</div>
+        </div>
+        <div class="sample-row">
+          <div class="s-name">Monthly EMI</div>
+          <div style="font-size:0.92rem;font-weight:600;color:var(--accent);font-family:var(--font-serif)">₹1,400</div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--ink-3);max-width:none;margin-top:10px">
+        I = P &times; R &times; T &divide; 100. Schedule auto-generated on loan approval.
+      </p>
+    </div>
+    <div style="font-size:0.72rem;color:var(--ink-3);margin-top:auto">
+      SHG Tracker &nbsp;&middot;&nbsp; Community Finance Software &nbsp;&middot;&nbsp; &copy; 2024
+    </div>
+  </div>
+
+  <!-- Right panel — form -->
+  <div class="auth-right">
+    <div class="auth-form-wrap" style="max-width:400px">
+      <h2 class="auth-heading">Create account</h2>
+      <p class="auth-sub">Register as a group admin or member.</p>
+
+      <%- include('../partials/flash') %>
+
+      <!-- Google OAuth Button -->
+      <a href="/auth/google" class="btn-google" id="btn-google-register">
+        <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          <path fill="none" d="M0 0h48v48H0z"/>
+        </svg>
+        Continue with Google
+      </a>
+
+      <div class="auth-divider">or sign up with email</div>
+
+      <form action="/auth/register" method="POST" id="register-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="name">Full name *</label>
+            <input id="name" type="text" name="name" class="form-control" placeholder="Priya Sharma" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone</label>
+            <input id="phone" type="tel" name="phone" class="form-control" placeholder="+91 98765 43210">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email address *</label>
+          <input id="reg-email" type="email" name="email" class="form-control" placeholder="name@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="role">Register as *</label>
+          <select id="role" name="role" class="form-control" required>
+            <option value="">-- Select role --</option>
+            <option value="admin">Group Admin / Leader</option>
+            <option value="member">Member</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="address">Village / District</label>
+          <input id="address" type="text" name="address" class="form-control" placeholder="e.g. Rampur, Sitapur, UP">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password *</label>
+            <input id="reg-password" type="password" name="password" class="form-control" placeholder="Min. 6 characters" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirmPassword">Confirm *</label>
+            <input id="confirmPassword" type="password" name="confirmPassword" class="form-control" placeholder="Repeat" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" style="justify-content:center;margin-top:6px">
+          Create account
+        </button>
+      </form>
+
+      <div class="auth-divider">or</div>
+      <p style="font-size:0.83rem;color:var(--ink-3);text-align:center">
+        Already registered? <a href="/auth/login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

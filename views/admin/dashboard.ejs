@@ -1,0 +1,129 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="breadcrumb">Group finance overview</div>
+      </div>
+      <div class="flex gap-2">
+        <% if(stats.pendingLoans > 0) { %>
+          <a href="/admin/loans?status=pending" class="btn btn-warning btn-sm">
+            <i data-lucide="clock"></i>
+            <%= stats.pendingLoans %> pending loan<%= stats.pendingLoans > 1 ? 's' : '' %>
+          </a>
+        <% } %>
+        <a href="/admin/groups" class="btn btn-primary btn-sm">
+          <i data-lucide="plus"></i> New group
+        </a>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <!-- Stat bar — hairline-separated, no cards -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-label">Total savings</div>
+          <div class="stat-value rupee">₹<%= stats.totalSavings %></div>
+          <div class="stat-sub">Across <%= stats.totalGroups %> group<%= stats.totalGroups !== 1 ? 's' : '' %></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Loans disbursed</div>
+          <div class="stat-value rupee">₹<%= stats.totalLoansIssued %></div>
+          <div class="stat-sub"><%= stats.activeLoans %> active</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Recovered</div>
+          <div class="stat-value stat-accent rupee">₹<%= stats.totalRecovered %></div>
+          <div class="stat-sub">Repayments received</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Outstanding</div>
+          <div class="stat-value stat-warning rupee">₹<%= stats.outstanding %></div>
+          <div class="stat-sub">Pending recovery</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Members</div>
+          <div class="stat-value"><%= stats.totalMembers %></div>
+          <div class="stat-sub"><%= defaulters.length %> with overdue EMIs</div>
+        </div>
+      </div>
+
+      <!-- Two columns below -->
+      <div class="flex gap-4" style="flex-wrap:wrap;align-items:flex-start">
+
+        <!-- Groups -->
+        <div class="card" style="flex:1;min-width:300px">
+          <div class="card-header">
+            <span class="card-title">Groups</span>
+            <a href="/admin/groups" class="btn btn-outline btn-sm">Manage</a>
+          </div>
+          <% if (groups.length === 0) { %>
+            <div class="empty-state">
+              <div class="empty-icon"><i data-lucide="users"></i></div>
+              <h3>No groups yet</h3>
+              <p>Create your first self-help group to start managing savings and loans.</p>
+              <a href="/admin/groups" class="btn btn-primary btn-sm">Create group</a>
+            </div>
+          <% } else { %>
+            <% groups.forEach((group, gi) => { %>
+              <div style="padding:11px 0;border-bottom:<%= gi < groups.length-1 ? '1px solid var(--hairline)' : 'none' %>;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="fw-bold" style="font-size:0.9rem"><%= group.name %></div>
+                  <div class="text-xs text-muted" style="margin-top:2px"><%= group.members.length %> member<%= group.members.length !== 1 ? 's' : '' %> &middot; <%= group.interestRate %>% p.a.</div>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+
+        <!-- Defaulters -->
+        <div class="card" style="flex:1;min-width:300px">
+          <div class="card-header">
+            <span class="card-title">Overdue repayments</span>
+            <a href="/admin/loans?status=active" class="btn btn-outline btn-sm">All loans</a>
+          </div>
+          <% if (defaulters.length === 0) { %>
+            <div class="empty-state">
+              <div class="empty-icon"><i data-lucide="check-circle"></i></div>
+              <h3>No overdue accounts</h3>
+              <p>All members are up to date with their repayments.</p>
+            </div>
+          <% } else { %>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Overdue EMIs</th>
+                    <th>Outstanding</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% defaulters.forEach(d => { %>
+                  <tr>
+                    <td class="fw-bold"><%= d.member ? d.member.name : 'Unknown' %></td>
+                    <td><span class="badge badge-danger"><%= d.overdueCount %></span></td>
+                    <td class="text-danger fw-bold rupee">₹<%= d.outstanding.toFixed(2) %></td>
+                    <td><a href="/admin/loans/<%= d.loanId %>" class="btn btn-outline btn-sm">View</a></td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

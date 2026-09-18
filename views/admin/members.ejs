@@ -1,0 +1,123 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Members</div>
+        <div class="breadcrumb">All registered members &middot; <%= members.length %> total</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+      <div class="card">
+        <% if (members.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="user"></i></div>
+            <h3>No members yet</h3>
+            <p>Members appear here once they register on the platform.</p>
+          </div>
+        <% } else { %>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Phone</th>
+                <th>Group</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% members.forEach(member => { %>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.78rem;color:var(--ink-2);flex-shrink:0">
+                      <%= member.name.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                      <div class="fw-bold" style="font-size:0.875rem"><%= member.name %></div>
+                      <div class="text-xs text-muted"><%= member.email %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-sm"><%= member.phone || '—' %></td>
+                <td>
+                  <% if (member.groupId) { %>
+                    <span class="badge badge-primary"><%= member.groupId.name %></span>
+                  <% } else { %>
+                    <span class="badge badge-secondary">Unassigned</span>
+                  <% } %>
+                </td>
+                <td class="text-sm text-muted"><%= new Date(member.joinDate).toLocaleDateString('en-IN') %></td>
+                <td>
+                  <% if (member.isActive) { %>
+                    <span class="badge badge-success">Active</span>
+                  <% } else { %>
+                    <span class="badge badge-danger">Inactive</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="flex gap-2">
+                    <button class="btn btn-outline btn-sm" onclick="openAssignModal('<%= member._id %>', '<%= member.name %>')">Assign group</button>
+                    <form action="/admin/members/<%= member._id %>/toggle" method="POST">
+                      <button type="submit" class="btn btn-sm <%= member.isActive ? 'btn-outline' : 'btn-success' %>" data-confirm="<%= member.isActive ? 'Deactivate' : 'Activate' %> this member?">
+                        <%= member.isActive ? 'Deactivate' : 'Activate' %>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Group Modal -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Assign member to group</h3>
+      <button class="modal-close" onclick="closeModal('assignModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form action="/admin/members/assign" method="POST" id="assignForm">
+      <input type="hidden" name="memberId" id="assignMemberId">
+      <div class="form-group">
+        <label class="form-label">Member</label>
+        <input type="text" class="form-control" id="assignMemberName" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="groupSelect">Group</label>
+        <select name="groupId" id="groupSelect" class="form-control">
+          <option value="">-- Remove from group --</option>
+          <% groups.forEach(g => { %>
+            <option value="<%= g._id %>"><%= g.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:18px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Assign</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openAssignModal(memberId, memberName) {
+  document.getElementById('assignMemberId').value = memberId;
+  document.getElementById('assignMemberName').value = memberName;
+  openModal('assignModal');
+}
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,109 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Loans</div>
+        <div class="breadcrumb">Loan applications and active accounts</div>
+      </div>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <!-- Status tabs -->
+      <div class="flex gap-2 mb-5" style="flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--hairline);padding-bottom:14px">
+        <a href="/admin/loans" class="btn btn-sm <%= !selectedStatus ? 'btn-primary' : 'btn-outline' %>">All</a>
+        <a href="/admin/loans?status=pending" class="btn btn-sm <%= selectedStatus === 'pending' ? 'btn-warning' : 'btn-outline' %>">Pending</a>
+        <a href="/admin/loans?status=active" class="btn btn-sm <%= selectedStatus === 'active' ? 'btn-success' : 'btn-outline' %>">Active</a>
+        <a href="/admin/loans?status=closed" class="btn btn-sm btn-outline">Closed</a>
+        <a href="/admin/loans?status=rejected" class="btn btn-sm btn-outline">Rejected</a>
+      </div>
+
+      <div class="card">
+        <% if (loans.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="file-text"></i></div>
+            <h3>No loan applications</h3>
+            <p>Loan requests from members will appear here.</p>
+          </div>
+        <% } else { %>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr><th>Member</th><th>Group</th><th>Amount</th><th>Purpose</th><th>Tenure</th><th>Applied</th><th>Status</th><th>Outstanding</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <% loans.forEach(loan => { %>
+                <tr>
+                  <td>
+                    <div class="fw-bold"><%= loan.memberId ? loan.memberId.name : 'Unknown' %></div>
+                    <div class="text-xs text-muted"><%= loan.memberId ? (loan.memberId.phone || loan.memberId.email) : '' %></div>
+                  </td>
+                  <td class="text-sm"><%= loan.groupId ? loan.groupId.name : '—' %></td>
+                  <td class="fw-bold rupee">₹<%= loan.amount.toLocaleString('en-IN') %></td>
+                  <td class="text-sm"><%= loan.purpose.length > 24 ? loan.purpose.substring(0,24)+'...' : loan.purpose %></td>
+                  <td class="text-sm"><%= loan.tenure %> mo.</td>
+                  <td class="text-xs text-muted"><%= new Date(loan.appliedAt).toLocaleDateString('en-IN') %></td>
+                  <td>
+                    <% if (loan.status === 'pending') { %><span class="badge badge-warning">Pending</span>
+                    <% } else if (loan.status === 'active') { %><span class="badge badge-success">Active</span>
+                    <% } else if (loan.status === 'closed') { %><span class="badge badge-secondary">Closed</span>
+                    <% } else if (loan.status === 'rejected') { %><span class="badge badge-danger">Rejected</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (loan.status === 'active') { %>
+                      <span class="text-danger fw-bold rupee">₹<%= loan.principalOutstanding.toFixed(2) %></span>
+                    <% } else { %><span class="text-muted">—</span><% } %>
+                  </td>
+                  <td>
+                    <div class="flex gap-2">
+                      <a href="/admin/loans/<%= loan._id %>" class="btn btn-outline btn-sm">View</a>
+                      <% if (loan.status === 'pending') { %>
+                        <form action="/admin/loans/<%= loan._id %>/approve" method="POST">
+                          <button type="submit" class="btn btn-success btn-sm" data-confirm="Approve this loan?">Approve</button>
+                        </form>
+                        <button class="btn btn-danger btn-sm" onclick="openRejectModal('<%= loan._id %>')">Reject</button>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Reject loan application</h3>
+      <button class="modal-close" onclick="closeModal('rejectModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form id="rejectForm" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="rejReason">Reason *</label>
+        <textarea id="rejReason" name="reason" class="form-control" placeholder="Explain why this loan is being rejected..." required></textarea>
+      </div>
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:18px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">Reject loan</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openRejectModal(loanId) {
+  document.getElementById('rejectForm').action = '/admin/loans/' + loanId + '/reject';
+  openModal('rejectModal');
+}
+</script>
+
+<%- include('../partials/footer') %>

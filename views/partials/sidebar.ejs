@@ -1,0 +1,69 @@
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/" class="logo-mark">
+      <i data-lucide="landmark"></i>
+      <span class="logo-name">SHG Tracker</span>
+    </a>
+    <div class="logo-sub">Community Finance</div>
+  </div>
+
+  <div class="sidebar-nav">
+    <% if (currentRole === 'admin') { %>
+    <div class="nav-section">
+      <div class="nav-section-title">Admin</div>
+      <a href="/admin/dashboard" class="nav-link">
+        <i data-lucide="layout-dashboard"></i> Dashboard
+      </a>
+      <a href="/admin/groups" class="nav-link">
+        <i data-lucide="users"></i> Groups
+      </a>
+      <a href="/admin/members" class="nav-link">
+        <i data-lucide="user"></i> Members
+      </a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Finance</div>
+      <a href="/admin/savings" class="nav-link">
+        <i data-lucide="piggy-bank"></i> Savings
+      </a>
+      <a href="/admin/loans" class="nav-link">
+        <i data-lucide="file-text"></i> Loans
+      </a>
+      <a href="/admin/loans?status=pending" class="nav-link">
+        <i data-lucide="clock"></i> Pending Approval
+      </a>
+    </div>
+    <% } else if (currentRole === 'member') { %>
+    <div class="nav-section">
+      <div class="nav-section-title">My Account</div>
+      <a href="/member/dashboard" class="nav-link">
+        <i data-lucide="home"></i> Dashboard
+      </a>
+      <a href="/member/passbook" class="nav-link">
+        <i data-lucide="book-open"></i> Savings Passbook
+      </a>
+      <a href="/member/loans" class="nav-link">
+        <i data-lucide="credit-card"></i> My Loans
+      </a>
+      <a href="/member/loans/request" class="nav-link">
+        <i data-lucide="plus-circle"></i> Request Loan
+      </a>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar"><%= currentName ? currentName.charAt(0).toUpperCase() : 'U' %></div>
+      <div class="user-info">
+        <div class="user-name"><%= currentName || 'User' %></div>
+        <div class="user-role"><%= currentRole %></div>
+      </div>
+    </div>
+    <form action="/auth/logout" method="POST" style="width:100%">
+      <button type="submit" class="btn btn-outline w-100" style="justify-content:center;gap:6px">
+        <i data-lucide="log-out"></i> Sign out
+      </button>
+    </form>
+  </div>
+</nav>

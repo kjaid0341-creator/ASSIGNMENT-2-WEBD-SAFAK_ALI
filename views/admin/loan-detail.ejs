@@ -1,0 +1,276 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Loan details</div>
+        <div class="breadcrumb"><a href="/admin/loans" style="color:var(--ink-3)">Loans</a> / #<%= loan._id.toString().slice(-6).toUpperCase() %></div>
+      </div>
+      <a href="/admin/loans" class="btn btn-outline btn-sm"><i data-lucide="arrow-left"></i> Back</a>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <div class="flex gap-4" style="flex-wrap:wrap;align-items:flex-start">
+
+        <!-- Left column -->
+        <div style="flex:1;min-width:280px;max-width:340px">
+          <div class="card mb-4" style="margin-bottom:16px">
+            <div class="card-header">
+              <span class="card-title">Summary</span>
+              <% if (loan.status === 'pending') { %><span class="badge badge-warning">Pending</span>
+              <% } else if (loan.status === 'active') { %><span class="badge badge-success">Active</span>
+              <% } else if (loan.status === 'closed') { %><span class="badge badge-secondary">Closed</span>
+              <% } else if (loan.status === 'rejected') { %><span class="badge badge-danger">Rejected</span>
+              <% } %>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+              <div style="padding:12px;background:var(--bg-2);border-radius:var(--r-sm);text-align:center">
+                <div class="text-xs text-muted" style="margin-bottom:3px">Principal</div>
+                <div style="font-family:var(--font-serif);font-size:1.25rem;font-weight:600;color:var(--ink)" class="rupee">₹<%= loan.amount.toLocaleString('en-IN') %></div>
+              </div>
+              <div style="padding:12px;background:var(--bg-2);border-radius:var(--r-sm);text-align:center">
+                <div class="text-xs text-muted" style="margin-bottom:3px">Total repayable</div>
+                <div style="font-family:var(--font-serif);font-size:1.25rem;font-weight:600;color:var(--ink)" class="rupee">₹<%= loan.totalRepayable ? loan.totalRepayable.toFixed(2) : '—' %></div>
+              </div>
+              <div style="padding:10px;background:var(--bg-2);border-radius:var(--r-sm);text-align:center">
+                <div class="text-xs text-muted" style="margin-bottom:3px">Interest</div>
+                <div style="font-family:var(--font-serif);font-size:1rem;font-weight:600;color:var(--warning-clr)" class="rupee">₹<%= loan.totalInterest ? loan.totalInterest.toFixed(2) : '—' %></div>
+              </div>
+              <div style="padding:10px;background:var(--bg-2);border-radius:var(--r-sm);text-align:center">
+                <div class="text-xs text-muted" style="margin-bottom:3px">Monthly EMI</div>
+                <div style="font-family:var(--font-serif);font-size:1rem;font-weight:600;color:var(--accent)" class="rupee">₹<%= loan.instalmentAmount ? loan.instalmentAmount.toFixed(2) : '—' %></div>
+              </div>
+            </div>
+
+            <% if (loan.status === 'active' || loan.status === 'closed') { %>
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-xs text-muted">Repayment progress</span>
+                <span class="text-xs fw-bold"><%= loan.totalRepayable > 0 ? Math.round((loan.totalRepaid / loan.totalRepayable) * 100) : 0 %>%</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:<%= loan.totalRepayable > 0 ? Math.round((loan.totalRepaid / loan.totalRepayable) * 100) : 0 %>%"></div>
+              </div>
+              <div class="flex justify-between mt-2 text-xs">
+                <span class="text-success">Paid: ₹<%= loan.totalRepaid.toFixed(2) %></span>
+                <span class="text-danger">Due: ₹<%= loan.principalOutstanding.toFixed(2) %></span>
+              </div>
+            </div>
+            <% } %>
+          </div>
+
+          <div class="card mb-4" style="margin-bottom:16px">
+            <div class="card-header"><span class="card-title">Borrower</span></div>
+            <div style="display:flex;flex-direction:column;gap:9px;font-size:0.855rem">
+              <div class="flex justify-between"><span class="text-muted">Name</span><span class="fw-bold"><%= loan.memberId.name %></span></div>
+              <div class="flex justify-between"><span class="text-muted">Email</span><span><%= loan.memberId.email %></span></div>
+              <div class="flex justify-between"><span class="text-muted">Phone</span><span><%= loan.memberId.phone || '—' %></span></div>
+              <div class="flex justify-between"><span class="text-muted">Group</span><span class="badge badge-primary"><%= loan.groupId.name %></span></div>
+              <div class="flex justify-between"><span class="text-muted">Purpose</span><span class="fw-bold" style="max-width:160px;text-align:right"><%= loan.purpose %></span></div>
+              <div class="flex justify-between"><span class="text-muted">Tenure</span><span><%= loan.tenure %> months</span></div>
+              <div class="flex justify-between"><span class="text-muted">Rate</span><span><%= loan.interestRate %>% p.a.</span></div>
+              <div class="flex justify-between"><span class="text-muted">Applied</span><span><%= moment(loan.appliedAt).format('DD MMM YYYY') %></span></div>
+              <% if (loan.approvedAt) { %><div class="flex justify-between"><span class="text-muted">Approved</span><span class="text-success"><%= moment(loan.approvedAt).format('DD MMM YYYY') %></span></div><% } %>
+              <% if (loan.status === 'rejected') { %>
+              <div class="alert alert-error" style="margin-top:4px;font-size:0.8rem">
+                <i data-lucide="alert-circle"></i> <%= loan.rejectionReason %>
+              </div>
+              <% } %>
+            </div>
+
+            <% if (loan.status === 'pending') { %>
+            <div class="flex gap-2" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--hairline)">
+              <form action="/admin/loans/<%= loan._id %>/approve" method="POST" style="flex:1">
+                <button type="submit" class="btn btn-success w-100" data-confirm="Approve loan of ₹<%= loan.amount %>?" style="justify-content:center">Approve loan</button>
+              </form>
+              <button class="btn btn-danger" style="flex:1;justify-content:center" onclick="openRejectModal('<%= loan._id %>')">Reject</button>
+            </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Instalment Schedule -->
+        <div style="flex:2;min-width:320px">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Instalment schedule</span>
+              <% if (loan.instalmentSchedule && loan.instalmentSchedule.length > 0) { %>
+              <div class="flex gap-2">
+                <span class="badge badge-success"><%= loan.instalmentSchedule.filter(i=>i.status==='paid').length %> paid</span>
+                <span class="badge badge-warning"><%= loan.instalmentSchedule.filter(i=>i.status==='pending').length %> pending</span>
+                <span class="badge badge-danger"><%= loan.instalmentSchedule.filter(i=>i.status==='overdue').length %> overdue</span>
+              </div>
+              <% } %>
+            </div>
+
+            <% if (!loan.instalmentSchedule || loan.instalmentSchedule.length === 0) { %>
+              <div class="empty-state" style="padding:36px">
+                <div class="empty-icon"><i data-lucide="calendar"></i></div>
+                <h3>No schedule yet</h3>
+                <p>Approve the loan to auto-generate the instalment schedule.</p>
+              </div>
+            <% } else { %>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr><th>#</th><th>Due date</th><th>Principal</th><th>Interest</th><th>EMI</th><th>Late Penalty</th><th>Paid</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  <% loan.instalmentSchedule.forEach((inst, idx) => { %>
+                  <tr class="instalment-row <%= inst.status %>">
+                    <td class="text-muted text-xs"><%= inst.instalmentNumber %></td>
+                    <td class="text-sm <%= new Date(inst.dueDate) < new Date() && inst.status !== 'paid' ? 'text-danger fw-bold' : '' %>">
+                      <%= moment(inst.dueDate).format('DD MMM YYYY') %>
+                    </td>
+                    <td class="text-sm rupee">₹<%= inst.principal.toFixed(2) %></td>
+                    <td class="text-sm text-warning rupee">₹<%= inst.interest.toFixed(2) %></td>
+                    <td class="fw-bold rupee">₹<%= inst.totalAmount.toFixed(2) %></td>
+                    <td class="text-sm">
+                      <% const pen = (inst.lateFee || 0) + (inst.penalInterest || 0); %>
+                      <% if (inst.waivedPenalty) { %>
+                        <span class="badge badge-secondary" title="Waived by admin">Waived</span>
+                      <% } else if (pen > 0 && inst.status !== 'paid') { %>
+                        <span class="badge badge-danger rupee" title="₹<%= inst.lateFee %> fine + ₹<%= inst.penalInterest %> penal interest">
+                          +₹<%= pen.toFixed(2) %>
+                        </span>
+                      <% } else if (inst.penaltyPaid > 0) { %>
+                        <span class="text-success rupee text-xs">₹<%= inst.penaltyPaid.toFixed(2) %> paid</span>
+                      <% } else { %>
+                        <span class="text-muted">—</span>
+                      <% } %>
+                    </td>
+                    <td class="text-sm rupee">
+                      <% if (inst.paidAmount > 0) { %>
+                        <span class="text-success">₹<%= inst.paidAmount.toFixed(2) %></span>
+                      <% } else { %><span class="text-muted">—</span><% } %>
+                    </td>
+                    <td>
+                      <% if (inst.status === 'paid') { %><span class="badge badge-success">Paid</span>
+                      <% } else if (inst.status === 'overdue') { %><span class="badge badge-danger">Overdue</span>
+                      <% } else if (inst.status === 'partial') { %><span class="badge badge-warning">Partial</span>
+                      <% } else { %><span class="badge badge-secondary">Pending</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (loan.status === 'active' && inst.status !== 'paid') { %>
+                      <% const totalDueWithPenalty = (inst.totalAmount + (inst.waivedPenalty ? 0 : pen)).toFixed(2); %>
+                      <button class="btn btn-outline btn-sm" onclick="openRepayModal('<%= loan._id %>', '<%= idx %>', '<%= inst.totalAmount.toFixed(2) %>', '<%= inst.instalmentNumber %>', '<%= pen.toFixed(2) %>', '<%= inst.waivedPenalty %>')">
+                        Record
+                      </button>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <% } %>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Reject loan</h3>
+      <button class="modal-close" onclick="closeModal('rejectModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form id="rejectForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Reason *</label>
+        <textarea name="reason" class="form-control" placeholder="State the reason for rejection..." required></textarea>
+      </div>
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('rejectModal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Repayment Modal -->
+<div class="modal-overlay" id="repayModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Record repayment</h3>
+      <button class="modal-close" onclick="closeModal('repayModal')"><i data-lucide="x"></i></button>
+    </div>
+    <form id="repayForm" method="POST">
+      <div class="form-group">
+        <label class="form-label">Instalment</label>
+        <input type="text" class="form-control" id="repayInstNo" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="paidAmount">EMI Amount received (₹) *</label>
+        <input id="paidAmount" type="number" name="paidAmount" class="form-control" step="0.01" min="0" required>
+      </div>
+
+      <!-- Penalty Section -->
+      <div id="penaltySection" style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:14px;display:none">
+        <div style="font-weight:600;color:#991b1b;font-size:0.88rem;margin-bottom:6px">⚠️ Overdue Penalty Applicable</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label" for="penaltyPaid" style="color:#991b1b">Late Penalty collected (₹)</label>
+          <input id="penaltyPaid" type="number" name="penaltyPaid" class="form-control" step="0.01" min="0">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <input type="checkbox" id="waivePenalty" name="waivePenalty" onchange="toggleWaivePenalty(this)">
+          <label for="waivePenalty" style="font-size:0.83rem;color:#4b5563;cursor:pointer">Waive penalty for this instalment</label>
+        </div>
+      </div>
+
+      <div class="flex gap-3" style="justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-outline" onclick="closeModal('repayModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Record payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRejectModal(loanId) {
+  document.getElementById('rejectForm').action = '/admin/loans/' + loanId + '/reject';
+  openModal('rejectModal');
+}
+function openRepayModal(loanId, instIdx, amount, instNo, penalty, isWaived) {
+  document.getElementById('repayForm').action = '/admin/loans/' + loanId + '/repay/' + instIdx;
+  document.getElementById('paidAmount').value = amount;
+  document.getElementById('repayInstNo').value = 'EMI #' + instNo + ' — ₹' + amount;
+  
+  const penSec = document.getElementById('penaltySection');
+  const penInput = document.getElementById('penaltyPaid');
+  const waiveBox = document.getElementById('waivePenalty');
+
+  const penVal = parseFloat(penalty) || 0;
+  if (penVal > 0 && isWaived !== 'true') {
+    penSec.style.display = 'block';
+    penInput.value = penVal;
+    waiveBox.checked = false;
+    penInput.disabled = false;
+  } else {
+    penSec.style.display = 'none';
+    penInput.value = 0;
+  }
+
+  openModal('repayModal');
+}
+
+function toggleWaivePenalty(box) {
+  const penInput = document.getElementById('penaltyPaid');
+  if (box.checked) {
+    penInput.value = 0;
+    penInput.disabled = true;
+  } else {
+    penInput.disabled = false;
+  }
+}
+</script>
+
+<%- include('../partials/footer') %>

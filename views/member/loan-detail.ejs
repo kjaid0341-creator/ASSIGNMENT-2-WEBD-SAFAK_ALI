@@ -1,0 +1,184 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">📋 Loan Details</div>
+        <div class="breadcrumb"><a href="/member/loans" style="color:var(--text-muted)">My Loans</a> / #<%= loan._id.toString().slice(-6).toUpperCase() %></div>
+      </div>
+      <a href="/member/loans" class="btn btn-outline btn-sm">← Back</a>
+    </div>
+
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <div class="flex gap-4" style="flex-wrap:wrap;align-items:flex-start">
+
+        <!-- Summary -->
+        <div style="flex:1;min-width:280px">
+          <div class="card mb-4">
+            <div class="card-header">
+              <span class="card-title">Loan Summary</span>
+              <% if (loan.status === 'pending') { %><span class="badge badge-warning">⏳ Pending</span>
+              <% } else if (loan.status === 'active') { %><span class="badge badge-success">✅ Active</span>
+              <% } else if (loan.status === 'closed') { %><span class="badge badge-secondary">🔒 Fully Repaid</span>
+              <% } else if (loan.status === 'rejected') { %><span class="badge badge-danger">❌ Rejected</span>
+              <% } %>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Loan Amount</span>
+                <span class="fw-bold rupee">₹<%= loan.amount.toLocaleString('en-IN') %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Purpose</span>
+                <span class="text-sm fw-bold"><%= loan.purpose %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Tenure</span>
+                <span class="text-sm"><%= loan.tenure %> months</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Interest Rate</span>
+                <span class="text-sm"><%= loan.interestRate %>% p.a.</span>
+              </div>
+              <% if (loan.totalRepayable) { %>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Total Interest</span>
+                <span class="text-sm text-warning rupee">₹<%= loan.totalInterest.toFixed(2) %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Total Repayable</span>
+                <span class="fw-bold rupee">₹<%= loan.totalRepayable.toFixed(2) %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Monthly EMI</span>
+                <span class="fw-bold text-success rupee">₹<%= loan.instalmentAmount.toFixed(2) %></span>
+              </div>
+              <% } %>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Applied On</span>
+                <span class="text-sm"><%= moment(loan.appliedAt).format('DD MMM YYYY') %></span>
+              </div>
+              <% if (loan.approvedAt) { %>
+              <div class="flex justify-between">
+                <span class="text-sm text-muted">Approved On</span>
+                <span class="text-sm text-success"><%= moment(loan.approvedAt).format('DD MMM YYYY') %></span>
+              </div>
+              <% } %>
+              <% if (loan.status === 'rejected') { %>
+              <div class="alert alert-error" style="margin-top:4px">
+                <strong>Reason:</strong> <%= loan.rejectionReason %>
+              </div>
+              <% } %>
+            </div>
+
+            <% if (loan.status === 'active') { %>
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color)">
+              <div class="flex justify-between mb-2">
+                <span class="text-xs text-muted">Repayment Progress</span>
+                <span class="text-xs fw-bold"><%= loan.totalRepayable > 0 ? Math.round((loan.totalRepaid / loan.totalRepayable) * 100) : 0 %>%</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:<%= loan.totalRepayable > 0 ? Math.round((loan.totalRepaid / loan.totalRepayable) * 100) : 0 %>%"></div>
+              </div>
+              <div class="flex justify-between mt-2 text-xs">
+                <span class="text-success">Paid: ₹<%= loan.totalRepaid.toFixed(2) %></span>
+                <span class="text-danger">Outstanding: ₹<%= loan.principalOutstanding.toFixed(2) %></span>
+              </div>
+            </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Instalment Schedule (read-only) -->
+        <div style="flex:2;min-width:300px">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📅 Repayment Schedule</span>
+              <% if (loan.instalmentSchedule && loan.instalmentSchedule.length > 0) { %>
+              <div class="flex gap-2 text-xs">
+                <span class="badge badge-success"><%= loan.instalmentSchedule.filter(i=>i.status==='paid').length %> Paid</span>
+                <span class="badge badge-warning"><%= loan.instalmentSchedule.filter(i=>i.status==='pending').length %> Pending</span>
+                <span class="badge badge-danger"><%= loan.instalmentSchedule.filter(i=>i.status==='overdue').length %> Overdue</span>
+              </div>
+              <% } %>
+            </div>
+
+            <% if (!loan.instalmentSchedule || loan.instalmentSchedule.length === 0) { %>
+              <div class="empty-state" style="padding:40px">
+                <div class="empty-icon">📅</div>
+                <h3><%= loan.status === 'pending' ? 'Awaiting Approval' : 'No Schedule' %></h3>
+                <p><%= loan.status === 'pending' ? 'Your instalment schedule will be generated once the admin approves your loan.' : 'No schedule available.' %></p>
+              </div>
+            <% } else { %>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Due Date</th>
+                    <th>EMI Amount</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th>Late Penalty</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% loan.instalmentSchedule.forEach(inst => { %>
+                  <tr class="instalment-row <%= inst.status %>">
+                    <td class="text-muted text-sm"><%= inst.instalmentNumber %></td>
+                    <td class="text-sm <%= new Date(inst.dueDate) < new Date() && inst.status !== 'paid' ? 'text-danger fw-bold' : '' %>">
+                      <%= moment(inst.dueDate).format('DD MMM YYYY') %>
+                    </td>
+                    <td class="fw-bold rupee">₹<%= inst.totalAmount.toFixed(2) %></td>
+                    <td class="text-sm rupee">₹<%= inst.principal.toFixed(2) %></td>
+                    <td class="text-sm text-warning rupee">₹<%= inst.interest.toFixed(2) %></td>
+                    <td class="text-sm">
+                      <% const pen = (inst.lateFee || 0) + (inst.penalInterest || 0); %>
+                      <% if (inst.waivedPenalty) { %>
+                        <span class="badge badge-secondary" title="Waived by admin">Waived</span>
+                      <% } else if (pen > 0 && inst.status !== 'paid') { %>
+                        <span class="badge badge-danger rupee" title="₹<%= inst.lateFee %> fine + ₹<%= inst.penalInterest %> penal interest">
+                          +₹<%= pen.toFixed(2) %>
+                        </span>
+                      <% } else if (inst.penaltyPaid > 0) { %>
+                        <span class="text-success rupee text-xs">₹<%= inst.penaltyPaid.toFixed(2) %> paid</span>
+                      <% } else { %>
+                        <span class="text-muted">—</span>
+                      <% } %>
+                    </td>
+                    <td class="text-sm rupee">
+                      <% if (inst.paidAmount > 0) { %>
+                        <span class="text-success">₹<%= inst.paidAmount.toFixed(2) %></span>
+                        <% if (inst.paidDate) { %>
+                          <div class="text-xs text-muted"><%= moment(inst.paidDate).format('DD MMM') %></div>
+                        <% } %>
+                      <% } else { %><span class="text-muted">—</span><% } %>
+                    </td>
+                    <td>
+                      <% if (inst.status === 'paid') { %><span class="badge badge-success">✓ Paid</span>
+                      <% } else if (inst.status === 'overdue') { %><span class="badge badge-danger">Overdue</span>
+                      <% } else if (inst.status === 'partial') { %><span class="badge badge-warning">Partial</span>
+                      <% } else { %><span class="badge badge-secondary">Pending</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

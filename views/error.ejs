@@ -1,0 +1,10 @@
+<%- include('partials/header') %>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;position:relative;z-index:1">
+  <div style="font-size:4rem;margin-bottom:20px">⚠️</div>
+  <h1 style="font-size:2rem;margin-bottom:12px">Server Error</h1>
+  <p style="color:var(--text-muted);margin-bottom:8px;max-width:500px"><%= error %></p>
+  <a href="/" class="btn btn-primary mt-3">🏠 Go Home</a>
+</div>
+
+<%- include('partials/footer') %>

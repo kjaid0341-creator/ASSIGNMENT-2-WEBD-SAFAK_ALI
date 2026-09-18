@@ -1,0 +1,90 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">📖 Savings Passbook</div>
+        <div class="breadcrumb">Complete savings history</div>
+      </div>
+      <div style="padding:8px 16px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-color)">
+        <span class="text-muted text-sm">Total Savings: </span>
+        <span class="fw-bold text-success rupee">₹<%= totalSavings %></span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Monthly Contributions</span>
+          <span class="badge badge-primary"><%= savings.length %> entries</span>
+        </div>
+
+        <% if (savings.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-icon">📖</div>
+            <h3>No Savings Yet</h3>
+            <p>Your monthly contributions will appear here once your admin records them.</p>
+          </div>
+        <% } else { %>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Month & Year</th>
+                <th>Amount</th>
+                <th>Running Total</th>
+                <th>Notes</th>
+                <th>Date Recorded</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%
+                let running = 0;
+                const reversed = [...savings].reverse();
+                reversed.forEach((s, i) => { running += s.amount; });
+                let cumulative = 0;
+              %>
+              <% savings.forEach((s, i) => { %>
+              <%
+                // Running total going backwards is complex; recompute from start
+              %>
+              <tr class="fade-in">
+                <td class="text-muted text-sm"><%= i + 1 %></td>
+                <td>
+                  <span class="badge badge-info"><%= months[s.month] %> <%= s.year %></span>
+                </td>
+                <td class="fw-bold text-success rupee">+ ₹<%= s.amount.toFixed(2) %></td>
+                <td class="rupee">
+                  <%
+                    // Recompute cumulative up to index (savings sorted desc, so compute from end)
+                    let cumAmt = 0;
+                    for (let j = savings.length - 1; j >= i; j--) { cumAmt += savings[j].amount; }
+                  %>
+                  ₹<%= cumAmt.toFixed(2) %>
+                </td>
+                <td class="text-sm text-muted"><%= s.notes || '—' %></td>
+                <td class="text-xs text-muted"><%= moment(s.createdAt).format('DD MMM YYYY') %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+            <tfoot>
+              <tr style="border-top:2px solid var(--border-color)">
+                <td colspan="2" class="fw-bold">Total</td>
+                <td class="fw-bold text-success rupee" colspan="4">₹<%= totalSavings %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

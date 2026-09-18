@@ -1,0 +1,122 @@
+<%- include('../partials/header') %>
+
+<div class="app-wrapper">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <div class="top-bar">
+      <div>
+        <div class="page-title">Loan request</div>
+        <div class="breadcrumb">Submit a new application</div>
+      </div>
+      <a href="/member/loans" class="btn btn-outline btn-sm"><i data-lucide="arrow-left"></i> My loans</a>
+    </div>
+    <div class="page-content">
+      <%- include('../partials/flash') %>
+
+      <div class="flex gap-4" style="flex-wrap:wrap;align-items:flex-start">
+
+        <!-- Form -->
+        <div class="card" style="flex:1;min-width:280px;max-width:480px">
+          <div class="card-header">
+            <span class="card-title">Application form</span>
+          </div>
+
+          <div class="alert alert-info mb-4" style="margin-bottom:14px;font-size:0.83rem">
+            <i data-lucide="info"></i>
+            <div>
+              Group interest rate: <strong><%= member.groupId ? member.groupId.interestRate : 12 %>% per annum</strong><br>
+              <span style="font-size:0.77rem;color:var(--ink-2)">
+                ⚠️ Late payment penalty: Grace period of <%= member.groupId && member.groupId.gracePeriodDays ? member.groupId.gracePeriodDays : 5 %> days. After grace, a fine of ₹<%= member.groupId && member.groupId.lateFeeAmount !== undefined ? member.groupId.lateFeeAmount : 50 %> + <%= member.groupId && member.groupId.penalInterestRate ? member.groupId.penalInterestRate : 2 %>%/mo penal interest applies, and future borrowing is suspended until cleared.
+              </span>
+            </div>
+          </div>
+
+          <form action="/member/loans/request" method="POST" id="loan-calc-form">
+            <div class="form-group">
+              <label class="form-label" for="amount">Loan amount (₹) *</label>
+              <input id="amount" type="number" name="amount" class="form-control" placeholder="e.g. 10000" min="100" step="100" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="purpose">Purpose *</label>
+              <textarea id="purpose" name="purpose" class="form-control" placeholder="e.g. Purchase of seeds and fertilizers, Medical treatment, Home repair..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="tenure">Repayment tenure *</label>
+              <select id="tenure" name="tenure" class="form-control" required>
+                <option value="">-- Select tenure --</option>
+                <option value="3">3 months</option>
+                <option value="6">6 months</option>
+                <option value="9">9 months</option>
+                <option value="12">12 months</option>
+                <option value="18">18 months</option>
+                <option value="24">24 months</option>
+                <option value="36">36 months</option>
+              </select>
+            </div>
+            <div id="interest-rate-display" data-rate="<%= member.groupId ? member.groupId.interestRate : 12 %>" style="display:none"></div>
+            <button type="submit" class="btn btn-primary w-100" style="justify-content:center;margin-top:4px">
+              Submit application
+            </button>
+          </form>
+        </div>
+
+        <!-- Live preview + how it works -->
+        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:16px">
+
+          <!-- Preview panel -->
+          <div class="card" id="loan-preview" style="display:none">
+            <div class="card-header">
+              <span class="card-title">Estimated breakdown</span>
+              <span class="badge badge-secondary">Preview</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0">
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hairline);font-size:0.855rem">
+                <span class="text-muted">Principal</span>
+                <span class="fw-bold rupee" id="prev-principal">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hairline);font-size:0.855rem">
+                <span class="text-muted">Total interest</span>
+                <span class="fw-bold text-warning rupee" id="prev-interest">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--hairline);font-size:0.855rem">
+                <span class="text-muted">Total repayable</span>
+                <span class="fw-bold rupee" id="prev-total">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:0.9rem">
+                <span class="text-muted">Monthly EMI</span>
+                <span style="font-family:var(--font-serif);font-size:1.15rem;font-weight:600;color:var(--accent)" class="rupee" id="prev-monthly">—</span>
+              </div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--ink-3);border-top:1px solid var(--hairline);padding-top:10px;margin-top:4px">
+              I = P &times; R &times; T &divide; 100. Schedule is auto-generated on approval.
+            </div>
+          </div>
+
+          <!-- Process explanation -->
+          <div class="card">
+            <div class="card-header"><span class="card-title">How loan approval works</span></div>
+            <div style="display:flex;flex-direction:column;gap:0">
+              <% [
+                ['Submit application', 'State the amount, purpose, and how many months you need to repay.'],
+                ['Admin reviews', 'Your group leader approves or rejects the request.'],
+                ['Schedule generated', 'On approval, your monthly instalment schedule is created automatically.'],
+                ['Repayments logged', 'Each payment you make is recorded against the corresponding EMI.']
+              ].forEach((step, i) => { %>
+              <div style="display:flex;gap:14px;padding:10px 0;border-bottom:<%= i < 3 ? '1px solid var(--hairline)' : 'none' %>">
+                <span style="font-family:var(--font-serif);font-size:1rem;font-weight:600;color:var(--border-2);flex-shrink:0;width:18px;padding-top:1px"><%= i+1 %></span>
+                <div>
+                  <div style="font-size:0.855rem;font-weight:600;color:var(--ink);margin-bottom:2px"><%= step[0] %></div>
+                  <div style="font-size:0.8rem;color:var(--ink-2)"><%= step[1] %></div>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
