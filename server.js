@@ -59,42 +59,46 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    const email = profile.emails[0].value.toLowerCase();
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      const email = profile.emails[0].value.toLowerCase();
 
-    // Check if user already exists (by googleId or email)
-    let user = await User.findOne({ googleId: profile.id });
+      // Check if user already exists (by googleId or email)
+      let user = await User.findOne({ googleId: profile.id });
 
-    if (!user) {
-      user = await User.findOne({ email });
-      if (user) {
-        // Link Google account to existing email user
-        user.googleId = profile.id;
-        user.avatar = profile.photos?.[0]?.value || null;
-        await user.save();
-      } else {
-        // Brand new Google user — default role 'member', admin can promote later
-        user = await User.create({
-          name: profile.displayName,
-          email,
-          googleId: profile.id,
-          avatar: profile.photos?.[0]?.value || null,
-          role: 'member',
-          isActive: true
-        });
+      if (!user) {
+        user = await User.findOne({ email });
+        if (user) {
+          // Link Google account to existing email user
+          user.googleId = profile.id;
+          user.avatar = profile.photos?.[0]?.value || null;
+          await user.save();
+        } else {
+          // Brand new Google user — default role 'member', admin can promote later
+          user = await User.create({
+            name: profile.displayName,
+            email,
+            googleId: profile.id,
+            avatar: profile.photos?.[0]?.value || null,
+            role: 'member',
+            isActive: true
+          });
+        }
       }
-    }
 
-    return done(null, user);
-  } catch (err) {
-    return done(err);
-  }
-}));
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }));
+} else {
+  console.warn('⚠️ Google OAuth disabled: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not provided in environment.');
+}
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {

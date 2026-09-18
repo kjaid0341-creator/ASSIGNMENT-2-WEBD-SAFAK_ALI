@@ -85,17 +85,25 @@ router.post('/register', async (req, res) => {
 // ─── GOOGLE OAUTH ─────────────────────────────────────────────────────────────
 
 // GET /auth/google — redirect to Google consent screen
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+router.get('/google', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    req.flash('error', 'Google Sign-In is not configured on this server. Please contact administrator.');
+    return res.redirect('/auth/login');
+  }
+  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+});
 
 // GET /auth/google/callback — Google redirects back here
-router.get('/google/callback',
+router.get('/google/callback', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    req.flash('error', 'Google Sign-In is not configured.');
+    return res.redirect('/auth/login');
+  }
   passport.authenticate('google', {
     failureRedirect: '/auth/login',
     failureFlash: true
-  }),
-  (req, res) => {
+  })(req, res, next);
+}, (req, res) => {
     const user = req.user;
     // Set the same session vars used everywhere else in the app
     req.session.userId = user._id.toString();
