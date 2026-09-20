@@ -69,10 +69,19 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL
-  }, async (accessToken, refreshToken, profile, done) => {
+    callbackURL,
+    passReqToCallback: true
+  }, async (req, accessToken, refreshToken, profile, done) => {
     try {
-      const email = profile.emails[0].value.toLowerCase();
+      const email = profile.emails && profile.emails[0] ? profile.emails[0].value.toLowerCase() : null;
+      if (!email) {
+        return done(new Error('No email found in Google profile.'));
+      }
+
+      // Determine requested role from query state or session
+      const requestedRole = (req.query && req.query.state === 'admin') || (req.session && req.session.oauthRole === 'admin')
+        ? 'admin'
+        : 'member';
 
       // Check if user already exists (by googleId or email)
       let user = await User.findOne({ googleId: profile.id });
@@ -82,18 +91,32 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         if (user) {
           // Link Google account to existing email user
           user.googleId = profile.id;
-          user.avatar = profile.photos?.[0]?.value || null;
+          user.avatar = profile.photos?.[0]?.value || user.avatar || null;
+          // If user explicitly signed in/up as admin, upgrade them
+          if (requestedRole === 'admin' && user.role !== 'admin') {
+            user.role = 'admin';
+          }
           await user.save();
         } else {
-          // Brand new Google user — default role 'member', admin can promote later
+          // Brand new Google user — assign requested role (admin or member)
           user = await User.create({
-            name: profile.displayName,
+            name: profile.displayName || email.split('@')[0],
             email,
             googleId: profile.id,
             avatar: profile.photos?.[0]?.value || null,
-            role: 'member',
+            role: requestedRole,
             isActive: true
           });
+        }
+      } else {
+        // User already has Google ID linked
+        // If they chose admin, ensure they have admin access
+        if (requestedRole === 'admin' && user.role !== 'admin') {
+          user.role = 'admin';
+          await user.save();
+        } else if (requestedRole === 'member' && user.role !== 'member') {
+          user.role = 'member';
+          await user.save();
         }
       }
 

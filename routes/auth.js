@@ -90,7 +90,15 @@ router.get('/google', (req, res, next) => {
     req.flash('error', 'Google Sign-In is not configured on this server. Please contact administrator.');
     return res.redirect('/auth/login');
   }
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  const role = req.query.role === 'admin' ? 'admin' : 'member';
+  if (req.session) {
+    req.session.oauthRole = role;
+  }
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    state: role,
+    prompt: 'select_account'
+  })(req, res, next);
 });
 
 // GET /auth/google/callback — Google redirects back here
@@ -110,7 +118,7 @@ router.get('/google/callback', (req, res, next) => {
     req.session.role = user.role;
     req.session.userName = user.name;
     req.session.groupId = user.groupId ? user.groupId.toString() : null;
-    req.flash('success', `Welcome, ${user.name}!`);
+    req.flash('success', `Welcome, ${user.name}! Signed in as ${user.role === 'admin' ? 'Group Admin' : 'Member'}.`);
     res.redirect(user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard');
   }
 );
