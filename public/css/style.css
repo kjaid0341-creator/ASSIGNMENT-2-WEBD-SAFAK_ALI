@@ -1042,3 +1042,122 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
   .page-content { padding: 18px 16px; }
 }
+
+/* ─── Phone & OTP Verification ───────────────────────────────── */
+.verify-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(22, 78, 58, 0.08);
+  margin: 0 auto 1rem auto;
+  border: 1px solid rgba(22, 78, 58, 0.15);
+}
+
+.phone-input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: border-color 0.18s ease;
+  overflow: hidden;
+}
+
+.phone-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 78, 58, 0.1);
+}
+
+.phone-prefix {
+  padding: 0 12px;
+  background: var(--cream);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  border-right: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  height: 42px;
+}
+
+.phone-control {
+  border: none !important;
+  box-shadow: none !important;
+  height: 42px;
+  padding: 0 12px;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+}
+
+.otp-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 0.5rem 0;
+}
+
+.otp-digit {
+  width: 48px;
+  height: 56px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  text-align: center;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.otp-digit:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 78, 58, 0.12);
+  transform: translateY(-2px);
+}
+
+.demo-otp-banner {
+  background: #eaf5ee;
+  border: 1.5px dashed #2d8a5e;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 1rem;
+}
+
+.demo-otp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #164e3a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resend-wrapper {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+
+.btn-resend {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.84rem;
+  padding: 0;
+}
+
+.btn-resend:hover {
+  color: #0f3527;
+}
+

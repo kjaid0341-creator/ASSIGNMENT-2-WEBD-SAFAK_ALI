@@ -1,0 +1,72 @@
+<%- include('../partials/header') %>
+
+<div class="auth-page">
+  <!-- Left panel -->
+  <div class="auth-left">
+    <a href="/" class="auth-brand">
+      <i data-lucide="landmark"></i>
+      SHG Tracker
+    </a>
+    <div class="auth-panel-body">
+      <h2>One-time phone verification.</h2>
+      <p>
+        To keep the community ledger secure, all new accounts require a one-time 5-digit SMS verification code on their first login.
+      </p>
+      <div class="sample-panel">
+        <div class="sample-panel-header">Security Notice</div>
+        <p style="font-size:0.8rem;color:var(--ink-2);margin:0;line-height:1.5">
+          Your phone number is used solely for account security, SMS OTP verification, and loan/repayment alerts.
+        </p>
+      </div>
+    </div>
+    <div style="font-size:0.72rem;color:var(--ink-3);margin-top:auto">
+      SHG Tracker &nbsp;&middot;&nbsp; Community Finance Software &nbsp;&middot;&nbsp; &copy; 2024
+    </div>
+  </div>
+
+  <!-- Right panel — form -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="verify-icon-wrap">
+        <span style="font-size:2rem">📱</span>
+      </div>
+      <h2 class="auth-heading">Verify Phone Number</h2>
+      <p class="auth-sub">Enter your mobile number to receive your 5-digit verification code.</p>
+
+      <%- include('../partials/flash') %>
+
+      <form action="/auth/verify-phone" method="POST" id="phone-form">
+        <div class="form-group">
+          <label class="form-label" for="phone">Mobile Phone Number *</label>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">+91</span>
+            <input 
+              id="phone" 
+              type="tel" 
+              name="phone" 
+              class="form-control phone-control" 
+              placeholder="9876543210" 
+              maxlength="15"
+              required 
+              autofocus
+            >
+          </div>
+          <p style="font-size:0.74rem;color:var(--ink-3);margin-top:4px">
+            A 5-digit OTP code will be sent to this number via SMS.
+          </p>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" style="justify-content:center;margin-top:12px">
+          Send 5-Digit OTP
+        </button>
+      </form>
+
+      <div class="auth-divider">or</div>
+      <p style="font-size:0.83rem;color:var(--ink-3);text-align:center">
+        Want to use a different account? <a href="/auth/logout">Sign out</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

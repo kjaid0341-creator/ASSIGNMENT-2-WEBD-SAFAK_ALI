@@ -2,6 +2,41 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const User = require('../models/User');
+const { generateOTP, sendOTP } = require('../utils/sms');
+
+// Helper: check if phone verification is needed or complete session
+async function initiateOrCompleteLogin(req, res, user) {
+  // If first-time login (phone not verified)
+  if (!user.phoneVerified) {
+    req.session.pendingUserId = user._id.toString();
+
+    // If phone number is missing, redirect to enter phone
+    if (!user.phone) {
+      return res.redirect('/auth/verify-phone');
+    }
+
+    // Auto-generate 5-digit OTP and send
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    const smsRes = await sendOTP(user.phone, otp);
+    if (smsRes.isDemo) {
+      req.session.demoOtp = otp;
+    }
+    req.flash('info', `First-time login: A 5-digit verification code was sent to ${user.phone}.`);
+    return res.redirect('/auth/verify-otp');
+  }
+
+  // Already verified - establish full session
+  req.session.userId = user._id.toString();
+  req.session.role = user.role;
+  req.session.userName = user.name;
+  req.session.groupId = user.groupId ? user.groupId.toString() : null;
+  req.flash('success', `Welcome back, ${user.name}!`);
+  return res.redirect(user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard');
+}
 
 // GET /auth/login
 router.get('/login', (req, res) => {
@@ -29,12 +64,8 @@ router.post('/login', async (req, res) => {
       req.flash('error', 'Invalid credentials.');
       return res.redirect('/auth/login');
     }
-    req.session.userId = user._id.toString();
-    req.session.role = user.role;
-    req.session.userName = user.name;
-    req.session.groupId = user.groupId ? user.groupId.toString() : null;
-    req.flash('success', `Welcome back, ${user.name}!`);
-    return res.redirect(user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard');
+
+    return initiateOrCompleteLogin(req, res, user);
   } catch (err) {
     console.error(err);
     req.flash('error', 'Server error. Please try again.');
@@ -71,14 +102,186 @@ router.post('/register', async (req, res) => {
       req.flash('error', 'Email already registered.');
       return res.redirect('/auth/register');
     }
-    const user = new User({ name, email, password, role, phone, address });
+    const user = new User({ 
+      name, 
+      email, 
+      password, 
+      role, 
+      phone, 
+      address,
+      phoneVerified: false 
+    });
     await user.save();
-    req.flash('success', 'Registration successful! Please login.');
+    req.flash('success', 'Registration successful! Please sign in to verify your phone.');
     res.redirect('/auth/login');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Registration failed. Try again.');
     res.redirect('/auth/register');
+  }
+});
+
+// ─── PHONE VERIFICATION & OTP ROUTES ──────────────────────────────────────────
+
+// GET /auth/verify-phone
+router.get('/verify-phone', async (req, res) => {
+  if (!req.session.pendingUserId) {
+    return res.redirect('/auth/login');
+  }
+  const user = await User.findById(req.session.pendingUserId);
+  if (!user) {
+    delete req.session.pendingUserId;
+    return res.redirect('/auth/login');
+  }
+  res.render('auth/verify-phone', {
+    title: 'Verify Phone — SHG Tracker',
+    phone: user.phone || ''
+  });
+});
+
+// POST /auth/verify-phone
+router.post('/verify-phone', async (req, res) => {
+  try {
+    if (!req.session.pendingUserId) {
+      return res.redirect('/auth/login');
+    }
+    const user = await User.findById(req.session.pendingUserId);
+    if (!user) {
+      delete req.session.pendingUserId;
+      return res.redirect('/auth/login');
+    }
+
+    let { phone } = req.body;
+    if (!phone || phone.trim().length < 8) {
+      req.flash('error', 'Please enter a valid mobile phone number.');
+      return res.redirect('/auth/verify-phone');
+    }
+    phone = phone.trim();
+    user.phone = phone;
+
+    // Generate 5-digit OTP
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    const smsRes = await sendOTP(phone, otp);
+    if (smsRes.isDemo) {
+      req.session.demoOtp = otp;
+    }
+
+    req.flash('success', `5-digit verification code sent to ${phone}.`);
+    res.redirect('/auth/verify-otp');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to send OTP. Please try again.');
+    res.redirect('/auth/verify-phone');
+  }
+});
+
+// GET /auth/verify-otp
+router.get('/verify-otp', async (req, res) => {
+  if (!req.session.pendingUserId) {
+    return res.redirect('/auth/login');
+  }
+  const user = await User.findById(req.session.pendingUserId);
+  if (!user) {
+    delete req.session.pendingUserId;
+    return res.redirect('/auth/login');
+  }
+  if (!user.phone) {
+    return res.redirect('/auth/verify-phone');
+  }
+
+  const demoOtp = req.session.demoOtp || null;
+  res.render('auth/verify-otp', {
+    title: 'Enter Verification Code — SHG Tracker',
+    phone: user.phone,
+    demoOtp
+  });
+});
+
+// POST /auth/verify-otp
+router.post('/verify-otp', async (req, res) => {
+  try {
+    if (!req.session.pendingUserId) {
+      return res.redirect('/auth/login');
+    }
+    const user = await User.findById(req.session.pendingUserId);
+    if (!user) {
+      delete req.session.pendingUserId;
+      return res.redirect('/auth/login');
+    }
+
+    const { otp } = req.body;
+    if (!otp || otp.trim().length !== 5) {
+      req.flash('error', 'Please enter a valid 5-digit OTP code.');
+      return res.redirect('/auth/verify-otp');
+    }
+
+    // Verify OTP and expiration
+    if (!user.otp || user.otp !== otp.trim()) {
+      req.flash('error', 'Invalid verification code. Please check and try again.');
+      return res.redirect('/auth/verify-otp');
+    }
+
+    if (!user.otpExpires || new Date() > user.otpExpires) {
+      req.flash('error', 'Verification code has expired. Please request a new one.');
+      return res.redirect('/auth/verify-otp');
+    }
+
+    // Success! Mark phone verified
+    user.phoneVerified = true;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // Clean up pending session
+    delete req.session.pendingUserId;
+    delete req.session.demoOtp;
+
+    // Establish full user session
+    req.session.userId = user._id.toString();
+    req.session.role = user.role;
+    req.session.userName = user.name;
+    req.session.groupId = user.groupId ? user.groupId.toString() : null;
+
+    req.flash('success', `Phone verified successfully! Welcome, ${user.name}!`);
+    return res.redirect(user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Verification failed. Please try again.');
+    res.redirect('/auth/verify-otp');
+  }
+});
+
+// POST /auth/resend-otp
+router.post('/resend-otp', async (req, res) => {
+  try {
+    if (!req.session.pendingUserId) {
+      return res.redirect('/auth/login');
+    }
+    const user = await User.findById(req.session.pendingUserId);
+    if (!user || !user.phone) {
+      return res.redirect('/auth/verify-phone');
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    const smsRes = await sendOTP(user.phone, otp);
+    if (smsRes.isDemo) {
+      req.session.demoOtp = otp;
+    }
+
+    req.flash('success', `New 5-digit verification code sent to ${user.phone}.`);
+    res.redirect('/auth/verify-otp');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Could not resend OTP. Please try again.');
+    res.redirect('/auth/verify-otp');
   }
 });
 
@@ -112,18 +315,17 @@ router.get('/google/callback', (req, res, next) => {
     failureFlash: true
   })(req, res, next);
 }, (req, res) => {
-    const user = req.user;
-    // Set the same session vars used everywhere else in the app
-    req.session.userId = user._id.toString();
-    req.session.role = user.role;
-    req.session.userName = user.name;
-    req.session.groupId = user.groupId ? user.groupId.toString() : null;
-    req.flash('success', `Welcome, ${user.name}! Signed in as ${user.role === 'admin' ? 'Group Admin' : 'Member'}.`);
-    res.redirect(user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard');
+    return initiateOrCompleteLogin(req, res, req.user);
   }
 );
 
-// POST /auth/logout
+// GET & POST /auth/logout
+router.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/auth/login');
+  });
+});
+
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/auth/login');

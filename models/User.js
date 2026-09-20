@@ -9,6 +9,9 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: null },          // Google profile picture URL
   role: { type: String, enum: ['admin', 'member'], default: 'member' },
   phone: { type: String, trim: true },
+  phoneVerified: { type: Boolean, default: false },
+  otp: { type: String, default: null },
+  otpExpires: { type: Date, default: null },
   address: { type: String, trim: true },
   groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', default: null },
   isActive: { type: Boolean, default: true },
