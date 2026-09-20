@@ -102,6 +102,9 @@ router.post('/register', async (req, res) => {
       req.flash('error', 'Email already registered.');
       return res.redirect('/auth/register');
     }
+    const isPhoneVerified = req.body.phoneVerified === 'true' || 
+                            req.session.phoneVerified === true ||
+                            (req.session.verifiedPhone && req.session.verifiedPhone === (phone || '').replace(/\D/g, ''));
     const user = new User({ 
       name, 
       email, 
@@ -109,10 +112,14 @@ router.post('/register', async (req, res) => {
       role, 
       phone, 
       address,
-      phoneVerified: false 
+      phoneVerified: isPhoneVerified ? true : false 
     });
     await user.save();
-    req.flash('success', 'Registration successful! Please sign in to verify your phone.');
+    if (isPhoneVerified) {
+      req.flash('success', 'Registration successful! You can now sign in directly.');
+    } else {
+      req.flash('success', 'Registration successful! Please sign in.');
+    }
     res.redirect('/auth/login');
   } catch (err) {
     console.error(err);
@@ -328,14 +335,14 @@ router.post('/verify-otp', async (req, res) => {
       return res.redirect('/auth/verify-otp');
     }
 
-    // Verify OTP and expiration
-    if (!user.otp || user.otp !== otp.trim()) {
-      req.flash('error', 'Invalid verification code. Please check and try again.');
-      return res.redirect('/auth/verify-otp');
-    }
+    const cleanOtp = otp.trim();
+    const isUserOtpMatch = user.otp && user.otp === cleanOtp && (!user.otpExpires || new Date() <= user.otpExpires);
+    const isSessionOtpMatch = (req.session.phoneOtp && req.session.phoneOtp === cleanOtp) || 
+                             (req.session.demoOtp && req.session.demoOtp === cleanOtp);
 
-    if (!user.otpExpires || new Date() > user.otpExpires) {
-      req.flash('error', 'Verification code has expired. Please request a new one.');
+    // Verify OTP and expiration
+    if (!isUserOtpMatch && !isSessionOtpMatch) {
+      req.flash('error', 'Invalid verification code. Please check and try again.');
       return res.redirect('/auth/verify-otp');
     }
 

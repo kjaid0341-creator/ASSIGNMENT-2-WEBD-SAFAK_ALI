@@ -136,6 +136,26 @@
       }
     });
 
+    // Auto-fill from demo box when clicked
+    const demoBox = document.querySelector('.demo-otp-banner');
+    if (demoBox) {
+      demoBox.style.cursor = 'pointer';
+      demoBox.title = 'Click to auto-fill OTP';
+      demoBox.addEventListener('click', () => {
+        const strong = demoBox.querySelector('strong');
+        if (strong) {
+          const code = strong.textContent.trim().replace(/\D/g, '');
+          if (code.length === 5) {
+            code.split('').forEach((d, i) => {
+              if (inputs[i]) inputs[i].value = d;
+            });
+            updateFullOtp();
+            inputs[4].focus();
+          }
+        }
+      });
+    }
+
     // Countdown Timer for Resend
     let timeLeft = 60;
     const timerEl = document.getElementById('timer');
