@@ -42,21 +42,16 @@ async function sendOTP(phoneNumber, otp) {
         }
       };
 
-      await new Promise((resolve, reject) => {
+      const result = await new Promise((resolve, reject) => {
         const req = https.request(options, (res) => {
           let data = '';
           res.on('data', chunk => data += chunk);
           res.on('end', () => {
             try {
               const parsed = JSON.parse(data);
-              if (parsed.return === true || res.statusCode === 200) {
-                resolve(parsed);
-              } else {
-                console.warn('Fast2SMS response warning:', data);
-                resolve(parsed);
-              }
+              resolve(parsed);
             } catch (e) {
-              resolve(data);
+              resolve({ raw: data });
             }
           });
         });
@@ -65,8 +60,13 @@ async function sendOTP(phoneNumber, otp) {
         req.end();
       });
 
-      console.log(`📱 [Fast2SMS] 5-digit OTP sent to +91 ${tenDigitPhone}`);
-      return { success: true, isDemo: false };
+      if (result.return === true) {
+        console.log(`📱 [Fast2SMS] Real 5-digit OTP sent successfully to +91 ${tenDigitPhone}`);
+        return { success: true, isDemo: false, message: 'SMS sent to your mobile number.' };
+      } else {
+        console.warn('Fast2SMS response:', result);
+        return { success: true, isDemo: false, message: result.message?.[0] || 'SMS dispatched.' };
+      }
     } catch (err) {
       console.error('Fast2SMS delivery error:', err.message);
     }

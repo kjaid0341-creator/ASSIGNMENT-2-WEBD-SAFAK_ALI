@@ -123,6 +123,115 @@ router.post('/register', async (req, res) => {
 
 // ─── PHONE VERIFICATION & OTP ROUTES ──────────────────────────────────────────
 
+// POST /auth/api/send-otp (AJAX)
+router.post('/api/send-otp', async (req, res) => {
+  try {
+    let { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Please enter a mobile phone number.' });
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid 10-digit mobile number.' });
+    }
+
+    const otp = generateOTP();
+    req.session.phoneOtp = otp;
+    req.session.phoneOtpPhone = cleanPhone;
+    req.session.phoneOtpExpires = Date.now() + 10 * 60 * 1000;
+
+    // If there is a pending user (first-time login)
+    if (req.session.pendingUserId) {
+      const pendingUser = await User.findById(req.session.pendingUserId);
+      if (pendingUser) {
+        pendingUser.phone = cleanPhone;
+        pendingUser.otp = otp;
+        pendingUser.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await pendingUser.save();
+      }
+    }
+
+    const smsRes = await sendOTP(cleanPhone, otp);
+    return res.json({
+      success: true,
+      message: smsRes.message || `OTP sent to +91 ${cleanPhone.slice(-10)}`,
+      isDemo: smsRes.isDemo,
+      demoOtp: smsRes.isDemo ? otp : undefined
+    });
+  } catch (err) {
+    console.error('API Send OTP error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to send OTP. Please try again.' });
+  }
+});
+
+// POST /auth/api/verify-otp (AJAX)
+router.post('/api/verify-otp', async (req, res) => {
+  try {
+    let { phone, otp } = req.body;
+    if (!otp || otp.trim().length !== 5) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid 5-digit OTP.' });
+    }
+
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    const cleanOtp = otp.trim();
+
+    // Check session OTP
+    let isValid = false;
+    if (req.session.phoneOtp && req.session.phoneOtp === cleanOtp) {
+      if (Date.now() <= req.session.phoneOtpExpires) {
+        isValid = true;
+      }
+    }
+
+    // Also check pending user if applicable
+    if (!isValid && req.session.pendingUserId) {
+      const pendingUser = await User.findById(req.session.pendingUserId);
+      if (pendingUser && pendingUser.otp === cleanOtp && pendingUser.otpExpires > new Date()) {
+        isValid = true;
+      }
+    }
+
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code.' });
+    }
+
+    // Success!
+    req.session.phoneVerified = true;
+    req.session.verifiedPhone = cleanPhone;
+
+    // If pending user logging in for first time, finalize their account verification
+    if (req.session.pendingUserId) {
+      const user = await User.findById(req.session.pendingUserId);
+      if (user) {
+        user.phoneVerified = true;
+        user.phone = cleanPhone;
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        delete req.session.pendingUserId;
+        delete req.session.demoOtp;
+
+        req.session.userId = user._id.toString();
+        req.session.role = user.role;
+        req.session.userName = user.name;
+        req.session.groupId = user.groupId ? user.groupId.toString() : null;
+
+        return res.json({
+          success: true,
+          message: 'Phone verified! Logging you in...',
+          redirectUrl: user.role === 'admin' ? '/admin/dashboard' : '/member/dashboard'
+        });
+      }
+    }
+
+    return res.json({ success: true, message: 'Phone number verified successfully!' });
+  } catch (err) {
+    console.error('API Verify OTP error:', err);
+    return res.status(500).json({ success: false, message: 'Verification error. Please try again.' });
+  }
+});
+
 // GET /auth/verify-phone
 router.get('/verify-phone', async (req, res) => {
   if (!req.session.pendingUserId) {

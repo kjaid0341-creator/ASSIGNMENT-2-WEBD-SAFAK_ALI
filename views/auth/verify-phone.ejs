@@ -35,31 +35,188 @@
 
       <%- include('../partials/flash') %>
 
-      <form action="/auth/verify-phone" method="POST" id="phone-form">
+      <div id="phone-verification-box">
         <div class="form-group">
-          <label class="form-label" for="phone">Mobile Phone Number *</label>
-          <div class="phone-input-wrap">
-            <span class="phone-prefix">+91</span>
+          <label class="form-label" for="phone">Mobile *</label>
+          <div class="input-with-action" id="mobile-wrap">
+            <span class="prefix-badge">+91</span>
             <input 
               id="phone" 
               type="tel" 
               name="phone" 
-              class="form-control phone-control" 
-              placeholder="9876543210" 
-              maxlength="15"
-              required 
+              class="input-action-field" 
+              placeholder="6394524398" 
+              value="<%= phone ? phone.replace(/\D/g, '').slice(-10) : '' %>"
+              maxlength="10" 
+              required
               autofocus
             >
+            <button type="button" class="btn-inline-action" id="btn-send-otp">Send OTP</button>
+            <span class="verified-badge-inline" id="phone-verified-badge" style="display:none">✓ Verified</span>
           </div>
-          <p style="font-size:0.74rem;color:var(--ink-3);margin-top:4px">
-            A 5-digit OTP code will be sent to this number via SMS.
-          </p>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100" style="justify-content:center;margin-top:12px">
-          Send 5-Digit OTP
-        </button>
-      </form>
+        <div class="form-group" id="otp-group" style="display:none">
+          <label class="form-label" for="input-otp">Mobile OTP *</label>
+          <div class="input-with-action" id="otp-wrap">
+            <input 
+              id="input-otp" 
+              type="text" 
+              inputmode="numeric" 
+              class="input-action-field" 
+              placeholder="Enter 5-digit OTP" 
+              maxlength="5"
+            >
+            <button type="button" class="btn-inline-action btn-verify" id="btn-verify-otp">Verify</button>
+          </div>
+          <div class="otp-subtext" id="otp-timer-wrap">
+            Didn't receive OTP? <span class="countdown-highlight" id="otp-countdown-text">Resend in <span id="otp-timer">30</span>s</span>
+            <span class="resend-link" id="btn-resend-link" style="display:none">Resend OTP</span>
+          </div>
+          <div id="otp-msg-banner" style="display:none;margin-top:6px;font-size:0.8rem;border-radius:6px;padding:6px 10px;"></div>
+        </div>
+      </div>
+
+      <script>
+        (function() {
+          const phoneInput = document.getElementById('phone');
+          const btnSendOtp = document.getElementById('btn-send-otp');
+          const otpGroup = document.getElementById('otp-group');
+          const inputOtp = document.getElementById('input-otp');
+          const btnVerifyOtp = document.getElementById('btn-verify-otp');
+          const phoneVerifiedBadge = document.getElementById('phone-verified-badge');
+          const mobileWrap = document.getElementById('mobile-wrap');
+          const otpMsgBanner = document.getElementById('otp-msg-banner');
+          const otpTimer = document.getElementById('otp-timer');
+          const otpCountdownText = document.getElementById('otp-countdown-text');
+          const btnResendLink = document.getElementById('btn-resend-link');
+
+          let countdownInterval = null;
+
+          function startTimer(seconds) {
+            let remaining = seconds;
+            otpTimer.textContent = remaining;
+            otpCountdownText.style.display = 'inline';
+            btnResendLink.style.display = 'none';
+
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+              remaining--;
+              otpTimer.textContent = remaining;
+              if (remaining <= 0) {
+                clearInterval(countdownInterval);
+                otpCountdownText.style.display = 'none';
+                btnResendLink.style.display = 'inline';
+              }
+            }, 1000);
+          }
+
+          async function handleSendOtp() {
+            const phone = phoneInput.value.replace(/\D/g, '');
+            if (phone.length !== 10) {
+              alert('Please enter a valid 10-digit mobile phone number.');
+              phoneInput.focus();
+              return;
+            }
+
+            btnSendOtp.disabled = true;
+            btnSendOtp.textContent = 'Sending...';
+            otpMsgBanner.style.display = 'none';
+
+            try {
+              const res = await fetch('/auth/api/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+              });
+              const data = await res.json();
+
+              if (data.success) {
+                otpGroup.style.display = 'block';
+                btnSendOtp.textContent = 'Resend';
+                btnSendOtp.disabled = true;
+                startTimer(30);
+                inputOtp.focus();
+
+                if (data.demoOtp) {
+                  otpMsgBanner.style.display = 'block';
+                  otpMsgBanner.style.background = '#eaf5ee';
+                  otpMsgBanner.style.border = '1px dashed #2d8a5e';
+                  otpMsgBanner.style.color = '#164e3a';
+                  otpMsgBanner.innerHTML = `💡 <strong>Demo Preview:</strong> Your 5-digit OTP is <strong>${data.demoOtp}</strong>`;
+                } else {
+                  otpMsgBanner.style.display = 'block';
+                  otpMsgBanner.style.background = '#e8f5e9';
+                  otpMsgBanner.style.border = '1px solid #c8e6c9';
+                  otpMsgBanner.style.color = '#2e7d32';
+                  otpMsgBanner.innerHTML = `✓ Real SMS sent to +91 ${phone}`;
+                }
+              } else {
+                alert(data.message || 'Failed to send OTP.');
+                btnSendOtp.disabled = false;
+                btnSendOtp.textContent = 'Send OTP';
+              }
+            } catch (err) {
+              alert('Network error sending OTP.');
+              btnSendOtp.disabled = false;
+              btnSendOtp.textContent = 'Send OTP';
+            }
+          }
+
+          btnSendOtp.addEventListener('click', handleSendOtp);
+          btnResendLink.addEventListener('click', handleSendOtp);
+
+          btnVerifyOtp.addEventListener('click', async () => {
+            const phone = phoneInput.value.replace(/\D/g, '');
+            const otp = inputOtp.value.trim();
+
+            if (otp.length !== 5) {
+              alert('Please enter the 5-digit OTP code.');
+              inputOtp.focus();
+              return;
+            }
+
+            btnVerifyOtp.disabled = true;
+            btnVerifyOtp.textContent = 'Verifying...';
+
+            try {
+              const res = await fetch('/auth/api/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, otp })
+              });
+              const data = await res.json();
+
+              if (data.success) {
+                phoneInput.readOnly = true;
+                btnSendOtp.style.display = 'none';
+                phoneVerifiedBadge.style.display = 'inline-flex';
+                mobileWrap.classList.add('is-verified');
+
+                otpMsgBanner.style.display = 'block';
+                otpMsgBanner.style.background = '#e8f5e9';
+                otpMsgBanner.style.border = '1px solid #2e7d32';
+                otpMsgBanner.style.color = '#2e7d32';
+                otpMsgBanner.innerHTML = '✓ Phone verified! Redirecting to dashboard...';
+                btnVerifyOtp.textContent = 'Verified ✓';
+
+                setTimeout(() => {
+                  window.location.href = data.redirectUrl || '/';
+                }, 1000);
+              } else {
+                alert(data.message || 'Invalid OTP code.');
+                btnVerifyOtp.disabled = false;
+                btnVerifyOtp.textContent = 'Verify';
+              }
+            } catch (err) {
+              alert('Verification error. Please try again.');
+              btnVerifyOtp.disabled = false;
+              btnVerifyOtp.textContent = 'Verify';
+            }
+          });
+        })();
+      </script>
 
       <div class="auth-divider">or</div>
       <p style="font-size:0.83rem;color:var(--ink-3);text-align:center">
