@@ -64,8 +64,15 @@ async function sendOTP(phoneNumber, otp) {
         console.log(`📱 [Fast2SMS] Real 5-digit OTP sent successfully to +91 ${tenDigitPhone}`);
         return { success: true, isDemo: false, message: 'SMS sent to your mobile number.' };
       } else {
-        console.warn('Fast2SMS response:', result);
-        return { success: true, isDemo: false, message: result.message?.[0] || 'SMS dispatched.' };
+        const errorMsg = Array.isArray(result.message) ? result.message[0] : (result.message || 'Fast2SMS requirement pending');
+        console.warn('⚠️ Fast2SMS response:', errorMsg);
+        // Fallback so user is not blocked if Fast2SMS KYC/website verification is pending
+        return { 
+          success: true, 
+          isDemo: true, 
+          otp, 
+          message: errorMsg 
+        };
       }
     } catch (err) {
       console.error('Fast2SMS delivery error:', err.message);
